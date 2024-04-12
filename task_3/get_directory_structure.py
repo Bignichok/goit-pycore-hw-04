@@ -2,42 +2,33 @@ import sys
 from pathlib import Path
 from colorama import Fore
 
-def create_directory_structure(directory):
-    tree = {}
+def directory_structure_lines(directory, is_root=False, indent=0):
+    lines = []
+    if is_root:
+        lines.append(f"{Fore.BLUE}{directory.name}/{Fore.RESET}")
     for item in directory.iterdir():
         if item.is_dir():
-            tree[item.name] = create_directory_structure(item)
+            lines.append(" " * indent + f"{Fore.BLUE}{item.name}/{Fore.RESET}")
+            lines.extend(directory_structure_lines(item, indent=indent + 2))
         elif item.is_file():
-            tree.setdefault('files', []).append(item.name)
-    return tree
-    
-def get_directory_structure(path: str) -> dict:
+            lines.append(" " * indent + f"{Fore.GREEN}{item.name}{Fore.RESET}")
+    return lines
+
+def get_directory_structure(path: str) -> str:
     path = Path(path)
     
     if path.exists():
-        return {path.name: create_directory_structure(path)}
+        lines = directory_structure_lines(path, is_root=True, indent=2)
+        return "\n".join(lines)
     else:
         raise FileNotFoundError(f"Directory '{path}' does not exist.")
-    
-def create_directory_structure_string(directory_structure: dict, indent:int = 0) -> str:
-    template = ''
-    for directory_name, contents in directory_structure.items():
-        if directory_name != 'files':
-            template += ' ' * indent + f"{Fore.BLUE}{directory_name}{Fore.RESET}\n"
-        if isinstance(contents, dict):
-            template += create_directory_structure_string(contents, indent + 4)
-        elif isinstance(contents, list):
-            template += ''.join([' ' * indent + f"{Fore.GREEN}{item}{Fore.RESET}\n" for item in contents])
-    return template
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python script.py <directory>")
+        print("Usage: python get_directory_structure.py <directory>")
         sys.exit(1)
     try:
         directory_structure = get_directory_structure(sys.argv[1])
-        print(create_directory_structure_string(directory_structure))
+        print(directory_structure)
     except FileNotFoundError as e:
         print(e)
-
-
