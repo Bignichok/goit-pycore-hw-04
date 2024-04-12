@@ -8,9 +8,7 @@ def create_directory_structure(directory):
         if item.is_dir():
             tree[item.name] = create_directory_structure(item)
         elif item.is_file():
-            parent_dir = tree.get('files', [])
-            parent_dir.append(item.name)
-            tree['files'] = parent_dir
+            tree.setdefault('files', []).append(item.name)
     return tree
     
 def get_directory_structure(path: str) -> dict:
@@ -19,22 +17,27 @@ def get_directory_structure(path: str) -> dict:
     if path.exists():
         return {path.name: create_directory_structure(path)}
     else:
-        print("file does not exist")
-        return {}
+        raise FileNotFoundError(f"Directory '{path}' does not exist.")
     
 def create_directory_structure_string(directory_structure: dict, indent:int = 0) -> str:
     template = ''
     for directory_name, contents in directory_structure.items():
         if directory_name != 'files':
-            template += ' ' * indent + Fore.BLUE + directory_name + Fore.RESET + '\n'
+            template += ' ' * indent + f"{Fore.BLUE}{directory_name}{Fore.RESET}\n"
         if isinstance(contents, dict):
             template += create_directory_structure_string(contents, indent + 4)
         elif isinstance(contents, list):
-            for item in contents:
-                template += ' ' * indent + Fore.GREEN + item + Fore.RESET + '\n'
+            template += ''.join([' ' * indent + f"{Fore.GREEN}{item}{Fore.RESET}\n" for item in contents])
     return template
 
-directory_structure = get_directory_structure(sys.argv[1])
-print(create_directory_structure_string(directory_structure))
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <directory>")
+        sys.exit(1)
+    try:
+        directory_structure = get_directory_structure(sys.argv[1])
+        print(create_directory_structure_string(directory_structure))
+    except FileNotFoundError as e:
+        print(e)
 
 
